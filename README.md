@@ -18,23 +18,27 @@ info: downloading installer
 
 ## spy.py
 
-* trace open() calls from a process and its children (not grandchildren!)
+* trace open(), clone() and exec() calls from a process and its children (not grandchildren!)
 * eBPF code is in spy.c
 
 ### example:
 26232 is a bash shell's PID
 ```bash
-./spy.py  26232
+./spy.py  14914
 ```
 
 if I run cat .profile on the shell ...
 ```
-fname: /etc/ld.so.cache, pid: 26576, ppid: 26232
-fname: /lib/x86_64-linux-gnu/libc.so.6, pid: 26576, ppid: 26232
-fname: /usr/lib/locale/locale-archive, pid: 26576, ppid: 26232
-fname: .profile, pid: 26576, ppid: 26232
+tracing 16216
+pid: 16216 ppid: 16053 > clone()
+pid: 16361 ppid: 16216 > exec(/bin/cat)
+pid: 16361 ppid: 16216 > open(/etc/ld.so.cache)
+pid: 16361 ppid: 16216 > open(/lib/x86_64-linux-gnu/libc.so.6)
+pid: 16361 ppid: 16216 > open(/usr/lib/locale/locale-archive)
+pid: 16361 ppid: 16216 > open(.profile)
 ```
 
 ### requirements
-* python 3
+* run.py: python 3
+* spy.py/spy.c: python2, bcc headers
 
