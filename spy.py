@@ -36,7 +36,7 @@ def print_event(cpu,data,size):
     if event.type == EventType.OPEN:
         print "%d->%d > open(%s)" % (event.ppid, event.pid, event.fname)
     if event.type == EventType.EXEC:
-        print "%d->%d > exec()" % (event.ppid, event.pid)
+        print "%d->%d > exec(%s)" % (event.ppid, event.pid, event.fname)
 
 
 b["events"].open_perf_buffer(print_event)

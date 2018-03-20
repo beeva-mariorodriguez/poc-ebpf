@@ -89,10 +89,30 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
 }
 
 // man 2 execve
-int trace_exec(struct pt_regs *ctx,
-               const char __user *filename,
-               const char __user *const __user *__argv,
-               const char __user *const __user *__envp)
+int kprobe__sys_execve(struct pt_regs *ctx,
+                       const char __user *filename,
+                       const char __user *const __user *__argv,
+                       const char __user *const __user *__envp)
 {
+    u32 pid, ppid;
+    struct task_struct *task = NULL;
+    struct event_t event = {};
+    pid = (u32) bpf_get_current_pid_tgid();
+    task = (struct task_struct *)bpf_get_current_task();
+    if (!task){
+        return 0;
+    }
+    if (task->flags & PF_KTHREAD)
+        return 0;
+    ppid = task->real_parent->pid;
+
+    FILTER
+
+    event.type = EXEC;
+    event.pid = pid;
+    event.ppid = ppid;
+    bpf_probe_read(&event.fname, sizeof(event.fname), (void *)filename);
+
+    events.perf_submit(ctx, &event, sizeof(event));
     return 0;
 }
