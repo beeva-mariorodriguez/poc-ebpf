@@ -9,7 +9,7 @@ parser.add_argument("pid")
 args = parser.parse_args() 
 
 # read ebpf C code to bpf_text
-with open('./spy.c', 'r') as f:
+with open('./shellspy.c', 'r') as f:
   bpf_text = f.read()
 
 # replace the placeholder (FILTER) with a check

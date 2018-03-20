@@ -16,15 +16,15 @@ info: downloading installer
 ...
 ```
 
-## spy.py
+## shellspy.py
 
 * trace open(), clone() and exec() calls from a process and its children (not grandchildren!)
-* eBPF code is in spy.c
+* eBPF code is in shellspy.c
 
 ### example:
 26232 is a bash shell's PID
 ```bash
-./spy.py  14914
+./shellspy.py  14914
 ```
 
 if I run cat .profile on the shell ...
@@ -40,5 +40,5 @@ pid: 16361 ppid: 16216 > open(.profile)
 
 ### requirements
 * run.py: python 3
-* spy.py/spy.c: python2, bcc headers
+* shellspy: python2, bcc headers
 
