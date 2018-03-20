@@ -46,6 +46,7 @@ struct event_t {
 */
 int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filename)
 {
+    u64 id;
     u32 pid, ppid;
     struct task_struct *task = NULL;
     struct event_t event = {};
@@ -54,8 +55,8 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
     // userspace PID == kernel TGID
     // userspace TID == kernel PID
     // linux is hard
-    // cast 64 bit tgid+pid to u32 variable to get the tgid
-    pid = (u32) bpf_get_current_pid_tgid();
+    id = bpf_get_current_pid_tgid();
+    pid = id >> 32;
     // get task_struct
     // lots of info (including a link to the parent's task_struct
     // defined in $LINUX_SOURCES/include/linux/sched.h
@@ -91,10 +92,12 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
 
 int kprobe__sys_clone(struct pt_regs *ctx)
 {
+    u64 id;
     u32 pid, ppid;
     struct task_struct *task = NULL;
     struct event_t event = {};
-    pid = (u32) bpf_get_current_pid_tgid();
+    id = bpf_get_current_pid_tgid();
+    pid = id >> 32;
     task = (struct task_struct *)bpf_get_current_task();
     if (!task){
         return 0;
@@ -119,10 +122,12 @@ int kprobe__sys_execve(struct pt_regs *ctx,
                        const char __user *const __user *__argv,
                        const char __user *const __user *__envp)
 {
+    u64 id;
     u32 pid, ppid;
     struct task_struct *task = NULL;
     struct event_t event = {};
-    pid = (u32) bpf_get_current_pid_tgid();
+    id = bpf_get_current_pid_tgid();
+    pid = id >> 32;
     task = (struct task_struct *)bpf_get_current_task();
     if (!task){
         return 0;
