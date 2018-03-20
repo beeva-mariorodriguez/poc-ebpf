@@ -18,6 +18,7 @@ BPF_PERF_OUTPUT(events);
 enum event_type {
     OPEN,
     EXEC,
+    CLONE,
 };
 
 struct event_t {
@@ -83,6 +84,30 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
     // bpf_probe_read() macro will (safely) copy it for us
     bpf_probe_read(&event.fname, sizeof(event.fname), (void *)filename);
     // event ready, submit
+    events.perf_submit(ctx, &event, sizeof(event));
+
+    return 0;
+}
+
+int kprobe__sys_clone(struct pt_regs *ctx)
+{
+    u32 pid, ppid;
+    struct task_struct *task = NULL;
+    struct event_t event = {};
+    pid = (u32) bpf_get_current_pid_tgid();
+    task = (struct task_struct *)bpf_get_current_task();
+    if (!task){
+        return 0;
+    }
+    if (task->flags & PF_KTHREAD)
+        return 0;
+    ppid = task->real_parent->pid;
+
+    FILTER
+
+    event.type = CLONE;
+    event.pid = pid;
+    event.ppid = ppid;
     events.perf_submit(ctx, &event, sizeof(event));
 
     return 0;

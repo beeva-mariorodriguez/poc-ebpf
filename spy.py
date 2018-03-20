@@ -22,6 +22,7 @@ NAME_MAX = 255 # linux/limits.h
 class EventType(object):
     OPEN = 0
     EXEC = 1
+    CLONE = 2
 
 class Event(ct.Structure):
     _fields_ = [("type", ct.c_int),
@@ -34,9 +35,12 @@ print "tracing %s" % args.pid
 def print_event(cpu,data,size):
     event = ct.cast(data, ct.POINTER(Event)).contents
     if event.type == EventType.OPEN:
-        print "%d->%d > open(%s)" % (event.ppid, event.pid, event.fname)
-    if event.type == EventType.EXEC:
-        print "%d->%d > exec(%s)" % (event.ppid, event.pid, event.fname)
+        print "pid: %d ppid: %d > open(%s)" % (event.pid, event.ppid, event.fname)
+    elif event.type == EventType.EXEC:
+        print "pid: %d ppid: %d > exec(%s)" % (event.pid, event.ppid, event.fname)
+    elif event.type == EventType.CLONE:
+        print "pid: %d ppid: %d > clone()" % (event.pid, event.ppid)
+
 
 
 b["events"].open_perf_buffer(print_event)
