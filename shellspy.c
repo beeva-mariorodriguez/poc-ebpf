@@ -107,7 +107,7 @@ TRACEPOINT_PROBE(sched, sched_process_fork)
     if (task->flags & PF_KTHREAD)
         return 0;
     ppid = task->real_parent->pid;
-    
+
     FILTER
 
 	struct event_t event = {};
@@ -121,13 +121,12 @@ TRACEPOINT_PROBE(sched, sched_process_fork)
 }
 
 // man 2 execve
-int kprobe__sys_execve(struct pt_regs *ctx,
-                       const char __user *filename,
-                       const char __user *const __user *__argv,
-                       const char __user *const __user *__envp)
+TRACEPOINT_PROBE(sched, sched_process_exec)
 {
     u64 id;
-    u32 pid, ppid;
+    u32 pid = args->pid;
+    u32 ppid;
+
     struct task_struct *task = NULL;
     struct event_t event = {};
     id = bpf_get_current_pid_tgid();
@@ -145,8 +144,8 @@ int kprobe__sys_execve(struct pt_regs *ctx,
     event.type = EXEC;
     event.pid = pid;
     event.ppid = ppid;
-    bpf_probe_read(&event.fname, sizeof(event.fname), (void *)filename);
+    TP_DATA_LOC_READ_CONST(event.fname, filename, NAME_MAX)
 
-    events.perf_submit(ctx, &event, sizeof(event));
+    events.perf_submit(args, &event, sizeof(event));
     return 0;
 }
