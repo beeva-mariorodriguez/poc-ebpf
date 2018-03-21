@@ -40,11 +40,15 @@ struct event_t {
  * 5 different syscalls ($LINUX_SOURCES/fs/open.c)
  * all call do_sys_open()!
  * ./include/linux/fs.h
- *  extern long do_sys_open(int dfd, const char __user *filename, int flags,
- *                          umode_t mode);
+ *
  * trace common point: do_sys_open()
+ * args from /sys/kernel/debug/tracing/events/fs/do_sys_open/format
+ * fs:do_sys_open event:
+ * field:__data_loc char[] filename;       offset:8;       size:4; signed:1;
+ * field:int flags;        offset:12;      size:4; signed:1;
+ * field:int mode; offset:16;      size:4; signed:1;
 */
-int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filename)
+TRACEPOINT_PROBE(fs, do_sys_open)
 {
     u64 id;
     u32 pid, ppid;
@@ -82,10 +86,10 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
     event.ppid = ppid;
     // *filename is a pointer to a string containing the filename
     // we can't (directly) read kernel memory
-    // bpf_probe_read() macro will (safely) copy it for us
-    bpf_probe_read(&event.fname, sizeof(event.fname), (void *)filename);
+    // TP_DATA_LOC_READ_CONST() macro will (safely) copy it for us
+    TP_DATA_LOC_READ_CONST(event.fname, filename, NAME_MAX);
     // event ready, submit
-    events.perf_submit(ctx, &event, sizeof(event));
+    events.perf_submit(args, &event, sizeof(event));
 
     return 0;
 }
