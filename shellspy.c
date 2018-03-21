@@ -90,14 +90,16 @@ int kprobe__do_sys_open(struct pt_regs *ctx, int dfd, const char __user *filenam
     return 0;
 }
 
-int kprobe__sys_clone(struct pt_regs *ctx)
+TRACEPOINT_PROBE(sched, sched_process_fork)
 {
-    u64 id;
-    u32 pid, ppid;
+    // args from /sys/kernel/debug/tracing/events/sched/sched_process_fork/format
+	// field:char parent_comm[16];     offset:8;       size:16;        signed:1;
+	// field:pid_t parent_pid; offset:24;      size:4; signed:1;
+	// field:char child_comm[16];      offset:28;      size:16;        signed:1;
+	// field:pid_t child_pid;  offset:44;      size:4; signed:1;
+    u32 pid = args->parent_pid;
+	u32 ppid;
     struct task_struct *task = NULL;
-    struct event_t event = {};
-    id = bpf_get_current_pid_tgid();
-    pid = id >> 32;
     task = (struct task_struct *)bpf_get_current_task();
     if (!task){
         return 0;
@@ -105,13 +107,15 @@ int kprobe__sys_clone(struct pt_regs *ctx)
     if (task->flags & PF_KTHREAD)
         return 0;
     ppid = task->real_parent->pid;
-
+    
     FILTER
+
+	struct event_t event = {};
 
     event.type = CLONE;
     event.pid = pid;
     event.ppid = ppid;
-    events.perf_submit(ctx, &event, sizeof(event));
+    events.perf_submit(args, &event, sizeof(event));
 
     return 0;
 }
