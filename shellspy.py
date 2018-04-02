@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from bcc import BPF
 import ctypes as ct
 import argparse
@@ -10,7 +10,7 @@ args = parser.parse_args()
 
 # read ebpf C code to bpf_text
 with open('./shellspy.c', 'r') as f:
-  bpf_text = f.read()
+    bpf_text = f.read()
 
 # replace the placeholder (FILTER) with a check
 bpf_text = bpf_text.replace('FILTER', 'if (pid != %s && ppid != %s) { return 0; }' % (args.pid, args.pid))
@@ -30,17 +30,16 @@ class Event(ct.Structure):
                 ("pid", ct.c_uint),
                 ("ppid", ct.c_uint)]
 
-print "tracing %s" % args.pid
+print("tracing %s" % args.pid)
 
-def print_event(cpu,data,size):
+def print_event(cpu, data, size):
     event = ct.cast(data, ct.POINTER(Event)).contents
     if event.type == EventType.OPEN:
-        print "pid: %d ppid: %d > open(%s)" % (event.pid, event.ppid, event.fname)
+        print("pid: %d ppid: %d > open(%s)" % (event.pid, event.ppid, event.fname))
     elif event.type == EventType.EXEC:
-        print "pid: %d ppid: %d > exec(%s)" % (event.pid, event.ppid, event.fname)
+        print("pid: %d ppid: %d > exec(%s)" % (event.pid, event.ppid, event.fname))
     elif event.type == EventType.CLONE:
-        print "pid: %d ppid: %d > clone()" % (event.pid, event.ppid)
-
+        print("pid: %d ppid: %d > clone()" % (event.pid, event.ppid))
 
 
 b["events"].open_perf_buffer(print_event)
